@@ -19,7 +19,6 @@ void DeckManager::LoadLFListSingle(const char* path) {
 	wchar_t strBuffer[256]{};
 	if(fp) {
 		while(fgets(linebuf, 256, fp)) {
-			std::cerr << "[LOG] Leyendo línea: " << linebuf;
 			if(linebuf[0] == '#')
             std::cerr << "[LOG] Línea ignorada (comentario)." << std::endl;
 				continue;
@@ -33,23 +32,31 @@ void DeckManager::LoadLFListSingle(const char* path) {
 				cur = _lfList.rbegin();
 				cur->listName = strBuffer;
 				cur->hash = 0x7dfcee6a;
+
+				std::wcerr << L"[LOG] Nueva lista creada: " << cur->listName << std::endl;
 				continue;
 			}
 			if(linebuf[0] == 0)
+                std::cerr << "[LOG] Línea vacía, ignorada." << std::endl;
 				continue;
 			int code = 0;
 			int count = -1;
 			if (sscanf(linebuf, "%d %d", &code, &count) != 2)
+                std::cerr << "[LOG] Línea no válida (no cumple el formato esperado)." << std::endl;
 				continue;
 			if (code <= 0 || code > 0xffffffffffff)
+			    std::cerr << "[LOG] Código fuera de rango: " << code << std::endl;
 				continue;
 			if (count < 0 || count > 2)
+                std::cerr << "[LOG] Conteo no válido: " << count << std::endl;
 				continue;
 			if (cur == _lfList.rend())
+                std::cerr << "[LOG] No hay lista activa para insertar el código: " << code << std::endl;
 				continue;
 			unsigned int hcode = code;
 			cur->content[code] = count;
 			cur->hash = cur->hash ^ ((hcode << 18) | (hcode >> 14)) ^ ((hcode << (27 + count)) | (hcode >> (5 - count)));
+			std::cerr << "[LOG] Código agregado: " << code << ", Conteo: " << count << ", Hash actualizado: " << cur->hash << std::endl;
 		}
 		fclose(fp);
 	}
