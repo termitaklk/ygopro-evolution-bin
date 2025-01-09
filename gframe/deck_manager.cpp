@@ -12,13 +12,16 @@ char DeckManager::deckBuffer[0x10000]{};
 DeckManager deckManager;
 
 void DeckManager::LoadLFListSingle(const char* path) {
+	std::cerr << "[LOG] Iniciando carga de lista LF desde: " << path << std::endl;
 	auto cur = _lfList.rend();
 	FILE* fp = fopen(path, "r");
 	char linebuf[256]{};
 	wchar_t strBuffer[256]{};
 	if(fp) {
 		while(fgets(linebuf, 256, fp)) {
+			std::cerr << "[LOG] Leyendo línea: " << linebuf;
 			if(linebuf[0] == '#')
+            std::cerr << "[LOG] Línea ignorada (comentario)." << std::endl;
 				continue;
 			if(linebuf[0] == '!') {
 				int sa = BufferIO::DecodeUTF8(&linebuf[1], strBuffer);
