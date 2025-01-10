@@ -12,89 +12,54 @@ char DeckManager::deckBuffer[0x10000]{};
 DeckManager deckManager;
 
 void DeckManager::LoadLFListSingle(const char* path) {
-    std::cerr << "[LOG] Iniciando carga de lista LF desde: " << path << std::endl;
-    
-    // Abrir el archivo
-    FILE* fp = fopen(path, "r");
-    if (!fp) {
-        std::cerr << "[ERROR] No se pudo abrir el archivo: " << path << std::endl;
-        return;
-    }
-    
-    std::cerr << "[LOG] Archivo abierto correctamente." << std::endl;
-
-    auto cur = _lfList.rend();
-    char linebuf[256]{};
-    wchar_t strBuffer[256]{};
-    
-    // Leer línea por línea
-    while(fgets(linebuf, 256, fp)) {
-        // Ignorar comentarios
-        if(linebuf[0] == '#') {
-            std::cerr << "[LOG] Línea ignorada (comentario): " << linebuf << std::endl;
-            continue;
-        }
-
-        // Procesar líneas con formato válido
-        if(linebuf[0] == '!') {
-            int sa = BufferIO::DecodeUTF8(&linebuf[1], strBuffer);
-            while(strBuffer[sa - 1] == L'\r' || strBuffer[sa - 1] == L'\n')
-                sa--;
-            strBuffer[sa] = 0;
-            LFList newlist;
-            _lfList.push_back(newlist);
-            cur = _lfList.rbegin();
-            cur->listName = strBuffer;
-            cur->hash = 0x7dfcee6a;
-			std::cerr << "[LOG] Cargando nueva lista LF: " << strBuffer << " con hash: " << std::hex << cur->hash << std::dec << std::endl;
-            continue;
-        }
-        
-        if(linebuf[0] == 0) {
-            // Línea vacía, omitir
-            continue;
-        }
-
-        int code = 0;
-        int count = -1;
-        
-        // Intentar extraer el código y la cantidad
-        if (sscanf(linebuf, "%d %d", &code, &count) != 2) {
-            continue;
-        }
-
-        // Validar el código
-        if (code <= 0 || code > 0xffffffffffff) {
-            continue;
-        }
-
-        // Validar la cantidad (solo 0, 1 o 2 son válidos)
-        if (count < 0 || count > 2) {
-            std::cerr << "[LOG] Línea ignorada (cantidad inválida): " << linebuf << std::endl;
-            continue;
-        }
-
-        // Si la cantidad es 0, 1 o 2, ignorar la línea
-        if (count == 0 || count == 1 || count == 2) {
-            std::cerr << "[LOG] Línea ignorada (cantidad 0, 1 o 2): " << linebuf << std::endl;
-            continue;
-        }
-
-        // Si no hay problemas, procesamos el código
-        if (cur == _lfList.rend()) {
-            continue;
-        }
-
-        unsigned int hcode = code;
-        cur->content[code] = count;
-        cur->hash = cur->hash ^ ((hcode << 18) | (hcode >> 14)) ^ ((hcode << (27 + count)) | (hcode >> (5 - count)));
-
-    }
-
-    fclose(fp);
-    std::cerr << "[LOG] Archivo cerrado." << std::endl;
+	auto cur = _lfList.rend();
+	FILE* fp = fopen(path, "r");
+	char linebuf[256]{};
+	wchar_t strBuffer[256]{};
+	if(fp) {
+		while(fgets(linebuf, 256, fp)) {
+			if(linebuf[0] == '#')
+    			std::cerr << "[INFO] Línea ignorada por ser un comentario: " << linebuf;
+				continue;
+			if(linebuf[0] == '!') {
+				std::cerr << "[INFO] Procesando marcador especial: " << linebuf;
+				int sa = BufferIO::DecodeUTF8(&linebuf[1], strBuffer);
+				while(strBuffer[sa - 1] == L'\r' || strBuffer[sa - 1] == L'\n' )
+					sa--;
+				strBuffer[sa] = 0;
+				LFList newlist;
+				_lfList.push_back(newlist);
+				cur = _lfList.rbegin();
+				cur->listName = strBuffer;
+				cur->hash = 0x7dfcee6a;
+				continue;
+			}
+			if(linebuf[0] == 0)
+			    std::cerr << "[INFO] Línea vacía ignorada." << std::endl;
+				continue;
+			int code = 0;
+			int count = -1;
+			if (sscanf(linebuf, "%d %d", &code, &count) != 2)
+			    std::cerr << "[ERROR] Línea no contiene dos enteros válidos: " << linebuf;
+				continue;
+			if (code <= 0 || code > 0xfffffff)
+			    std::cerr << "[ERROR] Código fuera de rango (1 <= code <= 0xFFFFFFF): " << code << std::endl;
+				continue;
+			if (count < 0 || count > 2)
+			    std::cerr << "[ERROR] Cantidad inválida (debe ser 0, 1 o 2): " << count << std::endl;
+				continue;
+			if (cur == _lfList.rend())
+				continue;
+			unsigned int hcode = code;
+			cur->content[code] = count;
+			cur->hash = cur->hash ^ ((hcode << 18) | (hcode >> 14)) ^ ((hcode << (27 + count)) | (hcode >> (5 - count)));
+			std::cerr << "[INFO] Actualizado contenido. Código: " << code 
+					  << ", Cantidad: " << count 
+					  << ", Nuevo hash: 0x" << std::hex << cur->hash << std::dec << std::endl;
+		}
+		fclose(fp);
+	}
 }
-
 void DeckManager::LoadLFList() {
 #ifdef SERVER_PRO2_SUPPORT
 	LoadLFListSingle("config/lflist.conf");
