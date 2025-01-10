@@ -42,7 +42,7 @@ void DeckManager::LoadLFListSingle(const char* path) {
 			if (sscanf(linebuf, "%d %d", &code, &count) != 2)
 			    std::cerr << "[ERROR] Línea no contiene dos enteros válidos: " << linebuf;
 				continue;
-			if (code <= 0 || code > 0xfffffffffff)
+			if (code <= 0 || code > 0xffffffffffff)
 			    std::cerr << "[ERROR] Código fuera de rango (1 <= code <= 0xFFFFFFF): " << code << std::endl;
 				continue;
 			if (count < 0 || count > 2)
