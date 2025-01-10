@@ -29,13 +29,13 @@ void DeckManager::LoadLFListSingle(const char* path) {
     
     // Leer línea por línea
     while(fgets(linebuf, 256, fp)) {
-        std::cerr << "[LOG] Leyendo línea: " << linebuf << std::endl;
-
+        // Ignorar comentarios
         if(linebuf[0] == '#') {
-            // Ignorar comentarios
-            std::cerr << "[LOG] Línea omitida (comentario): " << linebuf << std::endl;
+            std::cerr << "[LOG] Línea ignorada (comentario): " << linebuf << std::endl;
             continue;
         }
+
+        // Procesar líneas con formato válido
         if(linebuf[0] == '!') {
             int sa = BufferIO::DecodeUTF8(&linebuf[1], strBuffer);
             while(strBuffer[sa - 1] == L'\r' || strBuffer[sa - 1] == L'\n')
@@ -46,37 +46,42 @@ void DeckManager::LoadLFListSingle(const char* path) {
             cur = _lfList.rbegin();
             cur->listName = strBuffer;
             cur->hash = 0x7dfcee6a;
-            std::cerr << "[LOG] Lista LF procesada: " << strBuffer << std::endl;
+			std::cerr << "[LOG] Cargando nueva lista LF: " << strBuffer << " con hash: " << std::hex << cur->hash << std::dec << std::endl;
             continue;
         }
+        
         if(linebuf[0] == 0) {
             // Línea vacía, omitir
-            std::cerr << "[LOG] Línea vacía omitida." << std::endl;
             continue;
         }
 
         int code = 0;
         int count = -1;
+        
+        // Intentar extraer el código y la cantidad
         if (sscanf(linebuf, "%d %d", &code, &count) != 2) {
-            std::cerr << "[LOG] Línea omitida: formato inválido. Línea: " << linebuf << std::endl;
             continue;
         }
 
-        // Comprobación de validación del código
+        // Validar el código
         if (code <= 0 || code > 0xffffffffffff) {
-            std::cerr << "[LOG] ID omitido: Código fuera de rango. Código: " << code << std::endl;
             continue;
         }
 
-        // Comprobación de validación de la cantidad
+        // Validar la cantidad (solo 0, 1 o 2 son válidos)
         if (count < 0 || count > 2) {
-            std::cerr << "[LOG] ID omitido: Cantidad fuera de rango. ID: " << code << ", Cantidad: " << count << std::endl;
+            std::cerr << "[LOG] Línea ignorada (cantidad inválida): " << linebuf << std::endl;
+            continue;
+        }
+
+        // Si la cantidad es 0, 1 o 2, ignorar la línea
+        if (count == 0 || count == 1 || count == 2) {
+            std::cerr << "[LOG] Línea ignorada (cantidad 0, 1 o 2): " << linebuf << std::endl;
             continue;
         }
 
         // Si no hay problemas, procesamos el código
         if (cur == _lfList.rend()) {
-            std::cerr << "[LOG] ID omitido: No hay lista activa para agregar. ID: " << code << std::endl;
             continue;
         }
 
@@ -84,8 +89,6 @@ void DeckManager::LoadLFListSingle(const char* path) {
         cur->content[code] = count;
         cur->hash = cur->hash ^ ((hcode << 18) | (hcode >> 14)) ^ ((hcode << (27 + count)) | (hcode >> (5 - count)));
 
-        // Log del ID procesado correctamente
-        std::cerr << "[LOG] ID procesado correctamente. Código: " << code << ", Cantidad: " << count << std::endl;
     }
 
     fclose(fp);
