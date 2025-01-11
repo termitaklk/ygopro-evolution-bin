@@ -277,7 +277,7 @@ void DuelClient::HandleSTOCPacketLan(unsigned char* data, int len) {
 			std::cerr << "[LOG] Entrando en manejo de ERRMSG_DECKERROR" << std::endl;
 
 			mainGame->gMutex.lock();
-			unsigned int code = pkt->code & 0xFFFFFFF;
+			unsigned int code = pkt->code & 0xffffffffffff;
 			int flag = pkt->code >> 28;
 
 			std::cerr << "[LOG] Código de error completo: " << pkt->code << std::endl;
