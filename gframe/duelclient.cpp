@@ -273,77 +273,56 @@ void DuelClient::HandleSTOCPacketLan(unsigned char* data, int len) {
 			break;
 		}
 		case ERRMSG_DECKERROR: {
-
-			std::cerr << "[LOG] Entrando en manejo de ERRMSG_DECKERROR" << std::endl;
-
 			mainGame->gMutex.lock();
 			unsigned int code = pkt->code & 0xFFFFFFF;
 			int flag = pkt->code >> 28;
-
-			std::cerr << "[LOG] Código de error completo: " << pkt->code << std::endl;
-    		std::cerr << "[LOG] Código extraído: " << code << ", Flag: " << flag << std::endl;
-
 			wchar_t msgbuf[256];
 			switch(flag)
 			{
 			case DECKERROR_LFLIST: {
-				std::cerr << "[LOG] Error DECKERROR_LFLIST. Nombre de carta: " << dataManager.GetName(code) << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1407), dataManager.GetName(code));
 				break;
 			}
 			case DECKERROR_OCGONLY: {
-				std::cerr << "[LOG] Error DECKERROR_OCGONLY. Nombre de carta: " << dataManager.GetName(code) << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1413), dataManager.GetName(code));
 				break;
 			}
 			case DECKERROR_TCGONLY: {
-				std::cerr << "[LOG] Error DECKERROR_TCGONLY. Nombre de carta: " << dataManager.GetName(code) << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1414), dataManager.GetName(code));
 				break;
 			}
 			case DECKERROR_UNKNOWNCARD: {
-				std::cerr << "[LOG] Error DECKERROR_UNKNOWNCARD. Nombre de carta: " << dataManager.GetName(code) << ", Código: " << code << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1415), dataManager.GetName(code), code);
 				break;
 			}
 			case DECKERROR_CARDCOUNT: {
-				std::cerr << "[LOG] Error DECKERROR_CARDCOUNT. Nombre de carta: " << dataManager.GetName(code) << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1416), dataManager.GetName(code));
 				break;
 			}
 			case DECKERROR_MAINCOUNT: {
-				std::cerr << "[LOG] Error DECKERROR_MAINCOUNT. Cantidad: " << code << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1417), code);
 				break;
 			}
 			case DECKERROR_EXTRACOUNT: {
 				if(code>0)
-				    std::cerr << "[LOG] Error DECKERROR_EXTRACOUNT. Cantidad: " << code << std::endl;
 					myswprintf(msgbuf, dataManager.GetSysString(1418), code);
 				else
-				    std::cerr << "[LOG] Error DECKERROR_EXTRACOUNT. Sin código específico." << std::endl;
 					myswprintf(msgbuf, dataManager.GetSysString(1420));
 				break;
 			}
 			case DECKERROR_SIDECOUNT: {
-				std::cerr << "[LOG] Error DECKERROR_SIDECOUNT. Cantidad: " << code << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1419), code);
 				break;
 			}
 			case DECKERROR_NOTAVAIL: {
-				std::cerr << "[LOG] Error DECKERROR_NOTAVAIL. Nombre de carta: " << dataManager.GetName(code) << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1432), dataManager.GetName(code));
 				break;
 			}
 			default: {
-				std::cerr << "[LOG] Error desconocido. Código: " << pkt->code << std::endl;
 				myswprintf(msgbuf, dataManager.GetSysString(1406));
 				break;
 			}
 			}
-
-			std::cerr << "[LOG] Mensaje generado: " << std::wstring(msgbuf) << std::endl;
-
 			soundManager.PlaySoundEffect(SOUND_INFO);
 			mainGame->env->addMessageBox(L"", msgbuf);
 			mainGame->cbCategorySelect->setEnabled(true);
