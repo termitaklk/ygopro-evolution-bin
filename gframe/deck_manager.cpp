@@ -19,10 +19,8 @@ void DeckManager::LoadLFListSingle(const char* path) {
 	if(fp) {
 		while(fgets(linebuf, 256, fp)) {
 			if(linebuf[0] == '#')
-    			std::cerr << "[INFO] Línea ignorada por ser un comentario: " << linebuf;
 				continue;
 			if(linebuf[0] == '!') {
-				std::cerr << "[INFO] Procesando marcador especial: " << linebuf;
 				int sa = BufferIO::DecodeUTF8(&linebuf[1], strBuffer);
 				while(strBuffer[sa - 1] == L'\r' || strBuffer[sa - 1] == L'\n' )
 					sa--;
@@ -35,27 +33,20 @@ void DeckManager::LoadLFListSingle(const char* path) {
 				continue;
 			}
 			if(linebuf[0] == 0)
-			    std::cerr << "[INFO] Línea vacía ignorada." << std::endl;
 				continue;
 			int code = 0;
 			int count = -1;
 			if (sscanf(linebuf, "%d %d", &code, &count) != 2)
-			    std::cerr << "[ERROR] Línea no contiene dos enteros válidos: " << linebuf;
 				continue;
-			if (code <= 0 || code > 0xffffffffffff)
-			    std::cerr << "[ERROR] Código fuera de rango (1 <= code <= 0xFFFFFFF): " << code << std::endl;
+			if (code <= 0 || code > 0xfffffff)
 				continue;
 			if (count < 0 || count > 2)
-			    std::cerr << "[ERROR] Cantidad inválida (debe ser 0, 1 o 2): " << count << std::endl;
 				continue;
 			if (cur == _lfList.rend())
 				continue;
 			unsigned int hcode = code;
 			cur->content[code] = count;
 			cur->hash = cur->hash ^ ((hcode << 18) | (hcode >> 14)) ^ ((hcode << (27 + count)) | (hcode >> (5 - count)));
-			std::cerr << "[INFO] Actualizado contenido. Código: " << code 
-					  << ", Cantidad: " << count 
-					  << ", Nuevo hash: 0x" << std::hex << cur->hash << std::dec << std::endl;
 		}
 		fclose(fp);
 	}
@@ -97,189 +88,112 @@ static int checkAvail(unsigned int ot, unsigned int avail) {
 	return DECKERROR_NOTAVAIL;
 }
 int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
-    std::cerr << "[LOG] Iniciando verificación de mazo. Tamaño mazo: " << deck.main.size() 
-              << ", Tamaño extra: " << deck.extra.size() << ", Tamaño side: " << deck.side.size() 
-              << ", Regla: " << rule << ", LFHash: " << lfhash << std::endl;
-
-    std::unordered_map<int, int> ccount;
-    auto list = GetLFListContent(lfhash);
-    if (!list) {
-        std::cerr << "[ERROR] No se pudo obtener el contenido de LFList para el hash: " << lfhash << std::endl;
-        return 0;
-    }
-
-    int dc = 0;
-
-    // Comprobación del tamaño del mazo principal
-    if (deck.main.size() < DECK_MIN_SIZE || deck.main.size() > DECK_MAX_SIZE) {
-        std::cerr << "[ERROR] Tamaño del mazo principal fuera de los límites. Tamaño: " 
-                  << deck.main.size() << ", Límites: [" << DECK_MIN_SIZE << ", " << DECK_MAX_SIZE << "]" << std::endl;
-        return ((unsigned)DECKERROR_MAINCOUNT << 28) + deck.main.size();
-    }
-
-    // Comprobación del tamaño del mazo extra
-    if (deck.extra.size() > EXTRA_MAX_SIZE) {
-        std::cerr << "[ERROR] Tamaño del mazo extra fuera de los límites. Tamaño: " 
-                  << deck.extra.size() << ", Límite: " << EXTRA_MAX_SIZE << std::endl;
-        return ((unsigned)DECKERROR_EXTRACOUNT << 28) + deck.extra.size();
-    }
-
-    // Comprobación del tamaño del side deck
-    if (deck.side.size() > SIDE_MAX_SIZE) {
-        std::cerr << "[ERROR] Tamaño del side deck fuera de los límites. Tamaño: " 
-                  << deck.side.size() << ", Límite: " << SIDE_MAX_SIZE << std::endl;
-        return ((unsigned)DECKERROR_SIDECOUNT << 28) + deck.side.size();
-    }
-
-    // Comprobación de reglas
-    if (rule < 0 || rule >= 6) {
-        std::cerr << "[ERROR] Regla no válida. Regla: " << rule << std::endl;
-        return 0;
-    }
-
-    const unsigned int rule_map[6] = { AVAIL_OCG, AVAIL_TCG, AVAIL_SC, AVAIL_CUSTOM, AVAIL_OCGTCG, 0 };
-    auto avail = rule_map[rule];
-
-    // Comprobación de cartas en el mazo principal
-    for (auto& cit : deck.main) {
-        int gameruleDeckError = checkAvail(cit->second.ot, avail);
-        if (gameruleDeckError) {
-            std::cerr << "[ERROR] Error de regla en carta del mazo principal. Código: " << cit->first 
-                      << ", Error: " << gameruleDeckError << std::endl;
-            return (gameruleDeckError << 28) + cit->first;
-        }
-        if (cit->second.type & (TYPES_EXTRA_DECK | TYPE_TOKEN)) {
-            std::cerr << "[ERROR] Carta no válida en el mazo principal. Código: " << cit->first << std::endl;
-            return (DECKERROR_EXTRACOUNT << 28);
-        }
-
-        int code = cit->second.alias ? cit->second.alias : cit->first;
-        ccount[code]++;
-        dc = ccount[code];
-
-        if (dc > 3) {
-            std::cerr << "[ERROR] Carta duplicada en el mazo principal. Código: " << cit->first 
-                      << ", Duplicados: " << dc << std::endl;
-            return (DECKERROR_CARDCOUNT << 28) + cit->first;
-        }
-
-        auto it = list->find(code);
-        if (it != list->end() && dc > it->second) {
-            std::cerr << "[ERROR] Carta excede el límite en LFList. Código: " << cit->first 
-                      << ", Límite: " << it->second << ", Duplicados: " << dc << std::endl;
-            return (DECKERROR_LFLIST << 28) + cit->first;
-        }
-    }
-
-    // Solo verificamos el mazo extra si no hubo errores en el mazo principal
-    for (auto& cit : deck.extra) {
-        int gameruleDeckError = checkAvail(cit->second.ot, avail);
-        if (gameruleDeckError) {
-            std::cerr << "[ERROR] Error de regla en carta del mazo extra. Código: " << cit->first 
-                      << ", Error: " << gameruleDeckError << std::endl;
-            return (gameruleDeckError << 28) + cit->first;
-        }
-
-        int code = cit->second.alias ? cit->second.alias : cit->first;
-        ccount[code]++;
-        dc = ccount[code];
-
-        if (dc > 3) {
-            std::cerr << "[ERROR] Carta duplicada en el mazo extra. Código: " << cit->first 
-                      << ", Duplicados: " << dc << std::endl;
-            return (DECKERROR_CARDCOUNT << 28) + cit->first;
-        }
-
-        auto it = list->find(code);
-        if (it != list->end() && dc > it->second) {
-            std::cerr << "[ERROR] Carta excede el límite en LFList (mazo extra). Código: " << cit->first 
-                      << ", Límite: " << it->second << ", Duplicados: " << dc << std::endl;
-            return (DECKERROR_LFLIST << 28) + cit->first;
-        }
-    }
-
-    // Solo verificamos el side deck si no hubo errores en los dos anteriores
-    for (auto& cit : deck.side) {
-        int gameruleDeckError = checkAvail(cit->second.ot, avail);
-        if (gameruleDeckError) {
-            std::cerr << "[ERROR] Error de regla en carta del side deck. Código: " << cit->first 
-                      << ", Error: " << gameruleDeckError << std::endl;
-            return (gameruleDeckError << 28) + cit->first;
-        }
-
-        int code = cit->second.alias ? cit->second.alias : cit->first;
-        ccount[code]++;
-        dc = ccount[code];
-
-        if (dc > 3) {
-            std::cerr << "[ERROR] Carta duplicada en el side deck. Código: " << cit->first 
-                      << ", Duplicados: " << dc << std::endl;
-            return (DECKERROR_CARDCOUNT << 28) + cit->first;
-        }
-
-        auto it = list->find(code);
-        if (it != list->end() && dc > it->second) {
-            std::cerr << "[ERROR] Carta excede el límite en LFList (side deck). Código: " << cit->first 
-                      << ", Límite: " << it->second << ", Duplicados: " << dc << std::endl;
-            return (DECKERROR_LFLIST << 28) + cit->first;
-        }
-    }
-
-    std::cerr << "[LOG] Verificación del mazo completada sin errores." << std::endl;
-    return 0;
+	std::unordered_map<int, int> ccount;
+	auto list = GetLFListContent(lfhash);
+	if(!list)
+		return 0;
+	int dc = 0;
+	if(deck.main.size() < DECK_MIN_SIZE || deck.main.size() > DECK_MAX_SIZE)
+		return ((unsigned)DECKERROR_MAINCOUNT << 28) + deck.main.size();
+	if(deck.extra.size() > EXTRA_MAX_SIZE)
+		return ((unsigned)DECKERROR_EXTRACOUNT << 28) + deck.extra.size();
+	if(deck.side.size() > SIDE_MAX_SIZE)
+		return ((unsigned)DECKERROR_SIDECOUNT << 28) + deck.side.size();
+	if (rule < 0 || rule >= 6)
+		return 0;
+	const unsigned int rule_map[6] = { AVAIL_OCG, AVAIL_TCG, AVAIL_SC, AVAIL_CUSTOM, AVAIL_OCGTCG, 0 };
+	auto avail = rule_map[rule];
+	for (auto& cit : deck.main) {
+		int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		if(gameruleDeckError)
+			return (gameruleDeckError << 28) + cit->first;
+		if (cit->second.type & (TYPES_EXTRA_DECK | TYPE_TOKEN))
+			return (DECKERROR_EXTRACOUNT << 28);
+		int code = cit->second.alias ? cit->second.alias : cit->first;
+		ccount[code]++;
+		dc = ccount[code];
+		if(dc > 3)
+			return (DECKERROR_CARDCOUNT << 28) + cit->first;
+		auto it = list->find(code);
+		if(it != list->end() && dc > it->second)
+			return (DECKERROR_LFLIST << 28) + cit->first;
+	}
+	for (auto& cit : deck.extra) {
+		int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		if(gameruleDeckError)
+			return (gameruleDeckError << 28) + cit->first;
+		int code = cit->second.alias ? cit->second.alias : cit->first;
+		ccount[code]++;
+		dc = ccount[code];
+		if(dc > 3)
+			return (DECKERROR_CARDCOUNT << 28) + cit->first;
+		auto it = list->find(code);
+		if(it != list->end() && dc > it->second)
+			return (DECKERROR_LFLIST << 28) + cit->first;
+	}
+	for (auto& cit : deck.side) {
+		int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		if(gameruleDeckError)
+			return (gameruleDeckError << 28) + cit->first;
+		int code = cit->second.alias ? cit->second.alias : cit->first;
+		ccount[code]++;
+		dc = ccount[code];
+		if(dc > 3)
+			return (DECKERROR_CARDCOUNT << 28) + cit->first;
+		auto it = list->find(code);
+		if(it != list->end() && dc > it->second)
+			return (DECKERROR_LFLIST << 28) + cit->first;
+	}
+	return 0;
 }
 int DeckManager::LoadDeck(Deck& deck, int* dbuf, int mainc, int sidec, bool is_packlist) {
-	deck.clear();
-	int code;
-	int errorcode = 0;
-	CardData cd;
-	for(int i = 0; i < mainc; ++i) {
-		code = dbuf[i];
-		std::cerr << "[LOG] Procesando carta principal. Código: " << code << std::endl;
-		if(!dataManager.GetData(code, &cd)) {
-			std::cerr << "[ERROR] Datos no encontrados para el código: " << code << std::endl;
-			errorcode = code;
-			continue;
-		}
-		if (cd.type & TYPE_TOKEN) {
-			std::cerr << "[ERROR] Carta de tipo TOKEN detectada en el mazo principal. Código: " << code << std::endl;
-			errorcode = code;
-			continue;
-		}
-		if(is_packlist) {
-			deck.main.push_back(dataManager.GetCodePointer(code));
-			std::cerr << "[LOG] Carta añadida al mazo principal desde packlist. Código: " << code << std::endl;
-			continue;
-		}
-		if (cd.type & TYPES_EXTRA_DECK) {
-			if ((int)deck.extra.size() < EXTRA_MAX_SIZE)
-				deck.extra.push_back(dataManager.GetCodePointer(code));
-				std::cerr << "[LOG] Carta añadida al mazo extra. Código: " << code << ", Tamaño actual del extra: " << deck.extra.size() << std::endl;
-		}
-		else {
-			if ((int)deck.main.size() < DECK_MAX_SIZE)
-				deck.main.push_back(dataManager.GetCodePointer(code));
-				std::cerr << "[LOG] Carta añadida al mazo principal. Código: " << code << ", Tamaño actual del principal: " << deck.main.size() << std::endl;
-		}
-	}
-	for(int i = 0; i < sidec; ++i) {
-		code = dbuf[mainc + i];
-		std::cerr << "[LOG] Procesando carta del side deck. Código: " << code << std::endl;
-		if(!dataManager.GetData(code, &cd)) {
-			std::cerr << "[ERROR] Datos no encontrados para el código: " << code << std::endl;
-			errorcode = code;
-			continue;
-		}
-		if (cd.type & TYPE_TOKEN) {
-			std::cerr << "[ERROR] Carta de tipo TOKEN detectada en el side deck. Código: " << code << std::endl;
-			errorcode = code;
-			continue;
-		}
-		if(deck.side.size() < SIDE_MAX_SIZE)
-			deck.side.push_back(dataManager.GetCodePointer(code));
-			std::cerr << "[LOG] Carta añadida al side deck. Código: " << code << ", Tamaño actual del side: " << deck.side.size() << std::endl;
-	}
-	return errorcode;
+    deck.clear();
+    int code;
+    int errorcode = 0;
+    CardData cd;
+
+    for (int i = 0; i < mainc; ++i) {
+        code = dbuf[i];
+        if (!dataManager.GetData(code, &cd)) {
+            errorcode = code;
+            std::cerr << "Error: No se pudo obtener los datos de la carta con el código " << code << std::endl;
+            continue;
+        }
+        if (cd.type & TYPE_TOKEN) {
+            errorcode = code;
+            std::cerr << "Error: Carta tipo TOKEN detectada en el mazo, código: " << code << std::endl;
+            continue;
+        }
+        if (is_packlist) {
+            deck.main.push_back(dataManager.GetCodePointer(code));
+            continue;
+        }
+        if (cd.type & TYPES_EXTRA_DECK) {
+            if ((int)deck.extra.size() < EXTRA_MAX_SIZE) {
+                deck.extra.push_back(dataManager.GetCodePointer(code));
+            }
+        } else {
+            if ((int)deck.main.size() < DECK_MAX_SIZE)
+                deck.main.push_back(dataManager.GetCodePointer(code));
+        }
+    }
+
+    for (int i = 0; i < sidec; ++i) {
+        code = dbuf[mainc + i];
+        if (!dataManager.GetData(code, &cd)) {
+            errorcode = code;
+            std::cerr << "Error: No se pudo obtener los datos de la carta en el side con el código " << code << std::endl;
+            continue;
+        }
+        if (cd.type & TYPE_TOKEN) {
+            errorcode = code;
+            std::cerr << "Error: Carta tipo TOKEN detectada en el side, código: " << code << std::endl;
+            continue;
+        }
+        if (deck.side.size() < SIDE_MAX_SIZE)
+            deck.side.push_back(dataManager.GetCodePointer(code));
+    }
+    return errorcode;
 }
 int DeckManager::LoadDeck(Deck& deck, std::istringstream& deckStream, bool is_packlist) {
 	int ct = 0, mainc = 0, sidec = 0, code = 0;
