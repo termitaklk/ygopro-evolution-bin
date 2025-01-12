@@ -91,27 +91,21 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
 	std::unordered_map<int, int> ccount;
 	auto list = GetLFListContent(lfhash);
 	if(!list)
-	    std::cerr << "[ERROR] Lista LF no encontrada para el hash: " << lfhash << std::endl;
 		return 0;
 	int dc = 0;
 	if(deck.main.size() < DECK_MIN_SIZE || deck.main.size() > DECK_MAX_SIZE)
-	    std::cerr << "[ERROR] Tamaño del Main Deck inválido. Tamaño: " << deck.main.size() << std::endl;
 		return ((unsigned)DECKERROR_MAINCOUNT << 28) + deck.main.size();
 	if(deck.extra.size() > EXTRA_MAX_SIZE)
-	    std::cerr << "[ERROR] Tamaño del Extra Deck excede el límite. Tamaño: " << deck.extra.size() << std::endl;
 		return ((unsigned)DECKERROR_EXTRACOUNT << 28) + deck.extra.size();
 	if(deck.side.size() > SIDE_MAX_SIZE)
-	    std::cerr << "[ERROR] Tamaño del Side Deck excede el límite. Tamaño: " << deck.side.size() << std::endl;
 		return ((unsigned)DECKERROR_SIDECOUNT << 28) + deck.side.size();
 	if (rule < 0 || rule >= 6)
-	    std::cerr << "[ERROR] Regla no válida. Regla: " << rule << std::endl;
 		return 0;
 	const unsigned int rule_map[6] = { AVAIL_OCG, AVAIL_TCG, AVAIL_SC, AVAIL_CUSTOM, AVAIL_OCGTCG, 0 };
 	auto avail = rule_map[rule];
 	for (auto& cit : deck.main) {
 		int gameruleDeckError = checkAvail(cit->second.ot, avail);
 		if(gameruleDeckError)
-		    std::cerr << "[ERROR] Carta no disponible según la regla de juego. Código: " << cit->first << std::endl;
 			return (gameruleDeckError << 28) + cit->first;
 		if (cit->second.type & (TYPES_EXTRA_DECK | TYPE_TOKEN))
 			return (DECKERROR_EXTRACOUNT << 28);
@@ -153,62 +147,47 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
 	return 0;
 }
 int DeckManager::LoadDeck(Deck& deck, int* dbuf, int mainc, int sidec, bool is_packlist) {
-    deck.clear();
-    int code;
-    int errorcode = 0;
-    CardData cd;
-
-    for (int i = 0; i < mainc; ++i) {
-        code = dbuf[i];
-        if (!dataManager.GetData(code, &cd)) {
-            errorcode = code;
-            std::cerr << "[ERROR] No se pudo obtener los datos de la carta con el código: " << code << std::endl;
-            continue;
-        }
-        if (cd.type & TYPE_TOKEN) {
-            errorcode = code;
-            std::cerr << "[ERROR] Carta tipo TOKEN detectada en el mazo, código: " << code << std::endl;
-            continue;
-        }
-        if (is_packlist) {
-            deck.main.push_back(dataManager.GetCodePointer(code));
-            continue;
-        }
-        if (cd.type & TYPES_EXTRA_DECK) {
-            if ((int)deck.extra.size() < EXTRA_MAX_SIZE) {
-                deck.extra.push_back(dataManager.GetCodePointer(code));
-            } else {
-                std::cerr << "[ERROR] Exceso de cartas en el Extra Deck. Código: " << code << std::endl;
-            }
-        } else {
-            if ((int)deck.main.size() < DECK_MAX_SIZE)
-                deck.main.push_back(dataManager.GetCodePointer(code));
-            else {
-                std::cerr << "[ERROR] Exceso de cartas en el Main Deck. Código: " << code << std::endl;
-            }
-        }
-    }
-
-    for (int i = 0; i < sidec; ++i) {
-        code = dbuf[mainc + i];
-        if (!dataManager.GetData(code, &cd)) {
-            errorcode = code;
-            std::cerr << "[ERROR] No se pudo obtener los datos de la carta en el Side Deck, código: " << code << std::endl;
-            continue;
-        }
-        if (cd.type & TYPE_TOKEN) {
-            errorcode = code;
-            std::cerr << "[ERROR] Carta tipo TOKEN detectada en el Side Deck, código: " << code << std::endl;
-            continue;
-        }
-        if (deck.side.size() < SIDE_MAX_SIZE)
-            deck.side.push_back(dataManager.GetCodePointer(code));
-        else {
-            std::cerr << "[ERROR] Exceso de cartas en el Side Deck. Código: " << code << std::endl;
-        }
-    }
-
-    return errorcode;
+	deck.clear();
+	int code;
+	int errorcode = 0;
+	CardData cd;
+	for(int i = 0; i < mainc; ++i) {
+		code = dbuf[i];
+		if(!dataManager.GetData(code, &cd)) {
+			errorcode = code;
+			continue;
+		}
+		if (cd.type & TYPE_TOKEN) {
+			errorcode = code;
+			continue;
+		}
+		if(is_packlist) {
+			deck.main.push_back(dataManager.GetCodePointer(code));
+			continue;
+		}
+		if (cd.type & TYPES_EXTRA_DECK) {
+			if ((int)deck.extra.size() < EXTRA_MAX_SIZE)
+				deck.extra.push_back(dataManager.GetCodePointer(code));
+		}
+		else {
+			if ((int)deck.main.size() < DECK_MAX_SIZE)
+				deck.main.push_back(dataManager.GetCodePointer(code));
+		}
+	}
+	for(int i = 0; i < sidec; ++i) {
+		code = dbuf[mainc + i];
+		if(!dataManager.GetData(code, &cd)) {
+			errorcode = code;
+			continue;
+		}
+		if (cd.type & TYPE_TOKEN) {
+			errorcode = code;
+			continue;
+		}
+		if(deck.side.size() < SIDE_MAX_SIZE)
+			deck.side.push_back(dataManager.GetCodePointer(code));
+	}
+	return errorcode;
 }
 int DeckManager::LoadDeck(Deck& deck, std::istringstream& deckStream, bool is_packlist) {
 	int ct = 0, mainc = 0, sidec = 0, code = 0;
