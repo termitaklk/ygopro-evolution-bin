@@ -145,7 +145,7 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
     // Comprobación de cartas en el mazo principal
     for (auto& cit : deck.main) {
         int gameruleDeckError = checkAvail(cit->second.ot, avail);
-		std::cerr << "[ERROR] OT: " << second.ot << std::endl;
+		std::cerr << "[ERROR] OT: " << cit->second.ot << std::endl;
         if (gameruleDeckError) {
             std::cerr << "[ERROR] Error de regla en carta del mazo principal. Código: " << cit->first 
                       << ", Error: " << gameruleDeckError << std::endl;
