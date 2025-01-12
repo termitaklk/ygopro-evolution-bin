@@ -38,7 +38,12 @@ void DeckManager::LoadLFListSingle(const char* path) {
 			int count = -1;
 			if (sscanf(linebuf, "%d %d", &code, &count) != 2)
 				continue;
+<<<<<<< HEAD
 			if (code <= 0 || code > 0xfffffff)
+=======
+			if (code <= 0 || code > 0xfffffffffff)
+			    std::cerr << "[ERROR] Código fuera de rango (1 <= code <= 0xFFFFFFF): " << code << std::endl;
+>>>>>>> parent of ff2209e7 (Fix: Longitud)
 				continue;
 			if (count < 0 || count > 2)
 				continue;
