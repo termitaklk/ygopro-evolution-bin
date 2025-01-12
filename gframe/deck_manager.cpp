@@ -140,10 +140,12 @@ int DeckManager::CheckDeck(Deck& deck, int lfhash, int rule) {
 
     const unsigned int rule_map[6] = { AVAIL_OCG, AVAIL_TCG, AVAIL_SC, AVAIL_CUSTOM, AVAIL_OCGTCG, 0 };
     auto avail = rule_map[rule];
+	std::cerr << "[ERROR] Regla Available: " << avail << std::endl;
 
     // Comprobación de cartas en el mazo principal
     for (auto& cit : deck.main) {
         int gameruleDeckError = checkAvail(cit->second.ot, avail);
+		std::cerr << "[ERROR] OT: " << second.ot << std::endl;
         if (gameruleDeckError) {
             std::cerr << "[ERROR] Error de regla en carta del mazo principal. Código: " << cit->first 
                       << ", Error: " << gameruleDeckError << std::endl;
