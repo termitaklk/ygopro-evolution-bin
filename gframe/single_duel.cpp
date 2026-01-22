@@ -699,6 +699,7 @@ void SingleDuel::DuelEndProc() {
 		duel_stage = DUEL_STAGE_END;
 #endif
 	} else {
+<<<<<<< HEAD
 		int winc[3] = {0, 0, 0}; // 0=p0, 1=p1, 2=draw
 
 		// cuenta solo lo que cabe dentro del best-of actual
@@ -715,6 +716,15 @@ void SingleDuel::DuelEndProc() {
 			|| (duel_count >= match_max_duels);
 
 		if(match_finished) {
+=======
+		int winc[3] = {0, 0, 0};
+		for(int i = 0; i < duel_count; ++i)
+			winc[match_result[i]]++;
+		if(match_kill
+		        || (winc[0] == 2 || (winc[0] == 1 && winc[2] == 2))
+		        || (winc[1] == 2 || (winc[1] == 1 && winc[2] == 2))
+		        || (winc[2] == 3 || (winc[0] == 1 && winc[1] == 1 && winc[2] == 1)) ) {
+>>>>>>> parent of 33618d71 (Bot5)
 			NetServer::SendPacketToPlayer(players[0], STOC_DUEL_END);
 			NetServer::ReSendToPlayer(players[1]);
 			for(auto oit = observers.begin(); oit != observers.end(); ++oit)

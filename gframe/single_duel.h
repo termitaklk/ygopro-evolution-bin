@@ -79,9 +79,13 @@ protected:
 	int match_kill{ 0 };
 	unsigned char duel_count{ 0 };
 	unsigned char tp_player{ 0 };
+<<<<<<< HEAD
 	unsigned char match_max_duels{ 3 };
 	unsigned char match_wins_required{ 2 };
 	unsigned char match_result[99]{};
+=======
+	unsigned char match_result[3]{};
+>>>>>>> parent of 33618d71 (Bot5)
 	short time_limit[2]{};
 	short time_elapsed{ 0 };
 #ifdef YGOPRO_SERVER_MODE
