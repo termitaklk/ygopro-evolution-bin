@@ -4,7 +4,6 @@
 #include "tag_duel.h"
 #include "deck_manager.h"
 #include <thread>
-#include <cstdio>
 
 namespace ygo {
 std::unordered_map<bufferevent*, DuelPlayer> NetServer::users;
@@ -20,58 +19,17 @@ size_t NetServer::last_sent = 0;
 extern unsigned short replay_mode;
 extern HostInfo game_info;
 
-#define LOGERR(fmt, ...) \
-	do { std::fprintf(stderr, "[ygopro] " fmt "\n", ##__VA_ARGS__); std::fflush(stderr); } while(0)
-
 void NetServer::InitDuel()
 {
-	std::fprintf(stderr,
-		"[CORE][InitDuel] mode=%u rule=%u lflist=%u duel_rule=%u lp=%d hand=%u draw=%u time=%u nocheck=%u noshuffle=%u\n",
-		(unsigned)game_info.mode,
-		(unsigned)game_info.rule,
-		(unsigned)game_info.lflist,
-		(unsigned)game_info.duel_rule,
-		(int)game_info.start_lp,
-		(unsigned)game_info.start_hand,
-		(unsigned)game_info.draw_count,
-		(unsigned)game_info.time_limit,
-		(unsigned)game_info.no_check_deck,
-		(unsigned)game_info.no_shuffle_deck
-	);
-
-	std::fflush(stderr);
-
 	if(game_info.mode == MODE_SINGLE) {
-		LOGERR("InitDuel -> MODE_SINGLE (%u)", (unsigned)game_info.mode);
-
 		duel_mode = new SingleDuel(false);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-	} else if(game_info.mode == MODE_MATCH || game_info.mode == MODE_MATCH_BO5 || game_info.mode == MODE_MATCH_BO7) {
-		int bo = 3;
-		if(game_info.mode == MODE_MATCH_BO5) bo = 5;
-		else if(game_info.mode == MODE_MATCH_BO7) bo = 7;
-
-		LOGERR("InitDuel -> MATCH-like mode (%u), bestOf=%d", (unsigned)game_info.mode, bo);
-
-		auto* sd = new SingleDuel(true);
-		sd->SetMatchBestOf(bo);
-
-		duel_mode = sd;
+	} else if(game_info.mode == MODE_MATCH) {
+		duel_mode = new SingleDuel(true);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
 	} else if(game_info.mode == MODE_TAG) {
-		LOGERR("InitDuel -> MODE_TAG (%u)", (unsigned)game_info.mode);
-
 		duel_mode = new TagDuel();
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
-
-	} else {
-		LOGERR("InitDuel -> UNKNOWN mode (%u) => fallback MODE_SINGLE", (unsigned)game_info.mode);
-
-		game_info.mode = MODE_SINGLE;
-		duel_mode = new SingleDuel(false);
-		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 	}
 
 	CTOS_CreateGame* pkt = new CTOS_CreateGame;
@@ -395,97 +353,37 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 		*/
 		break;
 	}
-	
 	case CTOS_CREATE_GAME: {
-
 		if(dp->game || duel_mode)
 			return;
-		if(len < 1 + (int)sizeof(CTOS_CreateGame))
+		if (len < 1 + (int)sizeof(CTOS_CreateGame))
 			return;
-
 		CTOS_CreateGame packet;
 		std::memcpy(&packet, pdata, sizeof packet);
 		auto pkt = &packet;
-
-		LOGERR("CTOS_CREATE_GAME received: mode=%u rule=%u lflist=%u start_lp=%d hand=%u draw=%u time=%u",
-			(unsigned)pkt->info.mode,
-			(unsigned)pkt->info.rule,
-			(unsigned)pkt->info.lflist,
-			(int)pkt->info.start_lp,
-			(unsigned)pkt->info.start_hand,
-			(unsigned)pkt->info.draw_count,
-			(unsigned)pkt->info.time_limit
-		);
-
 		if(pkt->info.rule > CURRENT_RULE)
 			pkt->info.rule = CURRENT_RULE;
-<<<<<<< HEAD
-
-		// ✅ Validación robusta de modo (UNA sola lambda)
-		auto is_valid_mode = [](uint8_t m) {
-			return m == MODE_SINGLE
-				|| m == MODE_MATCH
-				|| m == MODE_TAG
-				|| m == MODE_MATCH_BO5
-				|| m == MODE_MATCH_BO7;
-		};
-
-		LOGERR("CTOS_CREATE_GAME using mode=%u (after validation)", (unsigned)pkt->info.mode);
-
-		if(!is_valid_mode(pkt->info.mode))
-=======
 		if(pkt->info.mode > MODE_TAG)
->>>>>>> parent of df43f7b5 (Update fixed)
 			pkt->info.mode = MODE_SINGLE;
-
-		// lflist validation
 		bool found = false;
-		for(const auto& lflist : deckManager._lfList) {
+		for (const auto& lflist : deckManager._lfList) {
 			if(pkt->info.lflist == lflist.hash) {
 				found = true;
 				break;
 			}
 		}
-		if(!found) {
-			if(deckManager._lfList.size())
+		if (!found) {
+			if (deckManager._lfList.size())
 				pkt->info.lflist = deckManager._lfList[0].hash;
 			else
 				pkt->info.lflist = 0;
 		}
-<<<<<<< HEAD
-
-		// crear duel_mode
-		if(pkt->info.mode == MODE_SINGLE) {
-			duel_mode = new SingleDuel(false);
-			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-		} else if(pkt->info.mode == MODE_MATCH
-			|| pkt->info.mode == MODE_MATCH_BO5
-			|| pkt->info.mode == MODE_MATCH_BO7) {
-
-			auto* sd = new SingleDuel(true);
-
-			// ✅ setear best-of estático según modo
-			if(pkt->info.mode == MODE_MATCH_BO5) {
-				sd->SetMatchBestOf(5);
-			} else if(pkt->info.mode == MODE_MATCH_BO7) {
-				sd->SetMatchBestOf(7);
-			} else {
-				sd->SetMatchBestOf(3); // match clásico
-			}
-
-			// ✅ OPCIONAL: compatibilidad con clientes que no entienden mode=3/4
-			// pkt->info.mode = MODE_MATCH;
-
-			duel_mode = sd;
-=======
 		if (pkt->info.mode == MODE_SINGLE) {
 			duel_mode = new SingleDuel(false);
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 		}
 		else if (pkt->info.mode == MODE_MATCH) {
 			duel_mode = new SingleDuel(true);
->>>>>>> parent of df43f7b5 (Update fixed)
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 		}
 		else if (pkt->info.mode == MODE_TAG) {
@@ -495,17 +393,14 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 		else
 			return;
 		duel_mode->host_info = pkt->info;
-
 		BufferIO::NullTerminate(pkt->name);
 		BufferIO::NullTerminate(pkt->pass);
 		BufferIO::CopyCharArray(pkt->name, duel_mode->name);
 		BufferIO::CopyCharArray(pkt->pass, duel_mode->pass);
-
 		duel_mode->JoinGame(dp, 0, true);
 		StartBroadcast();
 		break;
 	}
-
 	case CTOS_JOIN_GAME: {
 		if (!duel_mode)
 			return;

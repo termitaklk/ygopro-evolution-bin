@@ -28,9 +28,8 @@ public:
 	int Analyze(unsigned char* msgbuffer, unsigned int len) override;
 	void GetResponse(DuelPlayer* dp, unsigned char* pdata, unsigned int len) override;
 	void TimeConfirm(DuelPlayer* dp) override;
-	void SetMatchBestOf(int best_of);
 #ifdef YGOPRO_SERVER_MODE
-	void RequestField(DuelPlayer* dp);
+	void RequestField(DuelPlayer* dp) override;
 #endif
 	void EndDuel() override;
 	
@@ -77,32 +76,9 @@ protected:
 	Replay last_replay;
 	bool match_mode{ false };
 	int match_kill{ 0 };
-<<<<<<< HEAD
-<<<<<<< HEAD
-	unsigned char duel_count{ 0 };
-	unsigned char tp_player{ 0 };
-<<<<<<< HEAD
-	unsigned char match_max_duels{ 3 };
-	unsigned char match_wins_required{ 2 };
-	unsigned char match_result[99]{};
-=======
-	unsigned char match_result[3]{};
->>>>>>> parent of 33618d71 (Bot5)
-=======
-	// Match configuration (server-side). Defaults to Bo3 unless changed by constructor.
-	unsigned char match_max_duels{ 3 };
-	unsigned char match_wins_required{ 2 };
-	unsigned char duel_count{ 0 };
-	unsigned char tp_player{ 0 };
-	// Per-duel outcomes: 0 = p0 win, 1 = p1 win, 2 = draw.
-	// For Bo5 we need up to 5 results.
-	unsigned char match_result[5]{};
->>>>>>> parent of df43f7b5 (Update fixed)
-=======
 	unsigned char duel_count{ 0 };
 	unsigned char tp_player{ 0 };
 	unsigned char match_result[3]{};
->>>>>>> parent of 33618d71 (Bot5)
 	short time_limit[2]{};
 	short time_elapsed{ 0 };
 #ifdef YGOPRO_SERVER_MODE
