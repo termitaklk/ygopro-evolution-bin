@@ -21,12 +21,6 @@ extern unsigned short replay_mode;
 #endif
 SingleDuel::SingleDuel(bool is_match) {
 	match_mode = is_match;
-	// Default match settings in upstream are Bo3 (first to 2, max 3 duels).
-	// This fork enables Bo5 for match mode.
-	if(match_mode) {
-		match_max_duels = 5;
-		match_wins_required = 3;
-	}
 }
 SingleDuel::~SingleDuel() {
 }
@@ -723,9 +717,9 @@ void SingleDuel::DuelEndProc() {
 		}
 =======
 		int winc[3] = {0, 0, 0};
-		// Count per-duel outcomes collected so far: 0 = p0 win, 1 = p1 win, 2 = draw.
 		for(int i = 0; i < duel_count; ++i)
 			winc[match_result[i]]++;
+<<<<<<< HEAD
 >>>>>>> parent of df43f7b5 (Update fixed)
 
 		const int wins_to_win = match_wins_required > 0 ? match_wins_required : 2;
@@ -741,10 +735,15 @@ void SingleDuel::DuelEndProc() {
 		int winc[3] = {0, 0, 0};
 		for(int i = 0; i < duel_count; ++i)
 			winc[match_result[i]]++;
+=======
+>>>>>>> parent of 33618d71 (Bot5)
 		if(match_kill
 		        || (winc[0] == 2 || (winc[0] == 1 && winc[2] == 2))
 		        || (winc[1] == 2 || (winc[1] == 1 && winc[2] == 2))
 		        || (winc[2] == 3 || (winc[0] == 1 && winc[1] == 1 && winc[2] == 1)) ) {
+<<<<<<< HEAD
+>>>>>>> parent of 33618d71 (Bot5)
+=======
 >>>>>>> parent of 33618d71 (Bot5)
 			NetServer::SendPacketToPlayer(players[0], STOC_DUEL_END);
 			NetServer::ReSendToPlayer(players[1]);
