@@ -4,6 +4,8 @@
 #include "game.h"
 #include "data_manager.h"
 #include "../ocgcore/mtrandom.h"
+#include <cstdio>
+#include <cstring>
 
 namespace ygo {
 
@@ -23,6 +25,10 @@ void SingleDuel::InitMatchBo5() {
 
     duel_count = 0;
     std::memset(match_result, 2, sizeof(match_result)); // 2 = draw (neutral)
+
+	std::fprintf(stderr, "[SingleDuel] InitMatchBo5 -> max_duels=%u wins_required=%u\n",
+                 (unsigned)match_max_duels, (unsigned)match_wins_required);
+    std::fflush(stderr);
 }
 
 void SingleDuel::InitMatchBo7() {
@@ -32,6 +38,10 @@ void SingleDuel::InitMatchBo7() {
 
     duel_count = 0;
     std::memset(match_result, 2, sizeof(match_result));
+
+	std::fprintf(stderr, "[SingleDuel] InitMatchBo7 -> max_duels=%u wins_required=%u\n",
+                 (unsigned)match_max_duels, (unsigned)match_wins_required);
+    std::fflush(stderr);
 }
 
 void SingleDuel::Chat(DuelPlayer* dp, unsigned char* pdata, int len) {
