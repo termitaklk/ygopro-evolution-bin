@@ -5,6 +5,11 @@
 #include "data_manager.h"
 #include "../ocgcore/mtrandom.h"
 #include <cstring>
+#include <cstdio>
+
+#define LOGERR(fmt, ...) \
+	do { std::fprintf(stderr, "[ygopro] " fmt "\n", ##__VA_ARGS__); std::fflush(stderr); } while(0)
+
 
 namespace ygo {
 
