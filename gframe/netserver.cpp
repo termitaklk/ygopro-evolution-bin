@@ -419,6 +419,7 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 
 		if(pkt->info.rule > CURRENT_RULE)
 			pkt->info.rule = CURRENT_RULE;
+<<<<<<< HEAD
 
 		// ✅ Validación robusta de modo (UNA sola lambda)
 		auto is_valid_mode = [](uint8_t m) {
@@ -432,6 +433,9 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 		LOGERR("CTOS_CREATE_GAME using mode=%u (after validation)", (unsigned)pkt->info.mode);
 
 		if(!is_valid_mode(pkt->info.mode))
+=======
+		if(pkt->info.mode > MODE_TAG)
+>>>>>>> parent of df43f7b5 (Update fixed)
 			pkt->info.mode = MODE_SINGLE;
 
 		// lflist validation
@@ -448,6 +452,7 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 			else
 				pkt->info.lflist = 0;
 		}
+<<<<<<< HEAD
 
 		// crear duel_mode
 		if(pkt->info.mode == MODE_SINGLE) {
@@ -473,15 +478,22 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 			// pkt->info.mode = MODE_MATCH;
 
 			duel_mode = sd;
+=======
+		if (pkt->info.mode == MODE_SINGLE) {
+			duel_mode = new SingleDuel(false);
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-		} else if(pkt->info.mode == MODE_TAG) {
+		}
+		else if (pkt->info.mode == MODE_MATCH) {
+			duel_mode = new SingleDuel(true);
+>>>>>>> parent of df43f7b5 (Update fixed)
+			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
+		}
+		else if (pkt->info.mode == MODE_TAG) {
 			duel_mode = new TagDuel();
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
-		} else {
-			return;
 		}
-
+		else
+			return;
 		duel_mode->host_info = pkt->info;
 
 		BufferIO::NullTerminate(pkt->name);
