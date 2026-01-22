@@ -370,7 +370,7 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 		if(pkt->info.rule > CURRENT_RULE)
 			pkt->info.rule = CURRENT_RULE;
 		if(pkt->info.mode > MODE_TAG)
-			pkt->info.mode = MODE_SINGLE;
+			pkt->info.mode = MODE_MATCH_BO5;
 		bool found = false;
 		for (const auto& lflist : deckManager._lfList) {
 			if(pkt->info.lflist == lflist.hash) {
