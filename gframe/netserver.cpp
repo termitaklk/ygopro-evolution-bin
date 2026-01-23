@@ -4,6 +4,18 @@
 #include "tag_duel.h"
 #include "deck_manager.h"
 #include <thread>
+#include <cstdio>
+
+static const char* ModeName(unsigned int m) {
+	switch(m) {
+		case MODE_SINGLE: return "MODE_SINGLE";
+		case MODE_MATCH:  return "MODE_MATCH";
+		case MODE_TAG:    return "MODE_TAG";
+		case MODE_MATCH_BO5: return "MODE_MATCH_BO5";
+		case MODE_MATCH_BO7: return "MODE_MATCH_BO7";
+		default: return "MODE_UNKNOWN";
+	}
+}
 
 namespace ygo {
 std::unordered_map<bufferevent*, DuelPlayer> NetServer::users;
@@ -21,13 +33,22 @@ extern HostInfo game_info;
 
 void NetServer::InitDuel()
 {
+    std::fprintf(stderr, "[NetServer::InitDuel] game_info.mode=%u\n", (unsigned)game_info.mode);
+    std::fflush(stderr);
+
 	if(game_info.mode == MODE_SINGLE) {
+		std::fprintf(stderr, "[InitDuel] -> MODE_SINGLE\n");
+		std::fflush(stderr);
 		duel_mode = new SingleDuel(false);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 	} else if(game_info.mode == MODE_MATCH) {
+		std::fprintf(stderr, "[InitDuel] -> MATCH-like (%s)\n", ModeName((unsigned)game_info.mode));
+		std::fflush(stderr);
 		duel_mode = new SingleDuel(true);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 	} else if(game_info.mode == MODE_TAG) {
+		std::fprintf(stderr, "[InitDuel] -> MODE_TAG\n");
+		std::fflush(stderr);
 		duel_mode = new TagDuel();
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
 	}
@@ -361,6 +382,19 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 		CTOS_CreateGame packet;
 		std::memcpy(&packet, pdata, sizeof packet);
 		auto pkt = &packet;
+		std::fprintf(stderr,
+			"[CTOS_CREATE_GAME] raw mode=%u (%s) rule=%u duel_rule=%u lflist=%u lp=%d hand=%u draw=%u time=%u\n",
+			(unsigned)pkt->info.mode, ModeName((unsigned)pkt->info.mode),
+			(unsigned)pkt->info.rule,
+			(unsigned)pkt->info.duel_rule,
+			(unsigned)pkt->info.lflist,
+			(int)pkt->info.start_lp,
+			(unsigned)pkt->info.start_hand,
+			(unsigned)pkt->info.draw_count,
+			(unsigned)pkt->info.time_limit
+		);
+		std::fflush(stderr);
+
 		if(pkt->info.rule > CURRENT_RULE)
 			pkt->info.rule = CURRENT_RULE;
 		if(pkt->info.mode > MODE_TAG)
@@ -378,15 +412,28 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 			else
 				pkt->info.lflist = 0;
 		}
+
+		std::fprintf(stderr,
+			"[CTOS_CREATE_GAME] branching with mode=%u (%s)\n",
+			(unsigned)pkt->info.mode, ModeName((unsigned)pkt->info.mode)
+		);
+		std::fflush(stderr);
+
 		if (pkt->info.mode == MODE_SINGLE) {
+			std::fprintf(stderr, "[CTOS_CREATE_GAME] -> creating SingleDuel(false)\n");
+			std::fflush(stderr);
 			duel_mode = new SingleDuel(false);
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 		}
 		else if (pkt->info.mode == MODE_MATCH) {
+			std::fprintf(stderr, "[CTOS_CREATE_GAME] -> creating SingleDuel(true) for mode=%s\n", ModeName(pkt->info.mode));
+			std::fflush(stderr);
 			duel_mode = new SingleDuel(true);
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 		}
 		else if (pkt->info.mode == MODE_TAG) {
+			std::fprintf(stderr, "[CTOS_CREATE_GAME] -> creating TagDuel()\n");
+			std::fflush(stderr);
 			duel_mode = new TagDuel();
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
 		}

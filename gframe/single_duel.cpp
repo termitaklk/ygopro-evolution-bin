@@ -4,6 +4,7 @@
 #include "game.h"
 #include "data_manager.h"
 #include "../ocgcore/mtrandom.h"
+#include <cstdio>
 
 namespace ygo {
 
@@ -12,6 +13,9 @@ extern unsigned short replay_mode;
 #endif
 SingleDuel::SingleDuel(bool is_match) {
 	match_mode = is_match;
+	std::fprintf(stderr, "[SingleDuel::ctor] is_match=%d match_mode=%d\n",
+                 (int)is_match, (int)match_mode);
+    std::fflush(stderr);
 }
 SingleDuel::~SingleDuel() {
 }
