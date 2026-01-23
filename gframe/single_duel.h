@@ -12,8 +12,6 @@ class SingleDuel: public DuelMode {
 public:
 	SingleDuel(bool is_match);
 	~SingleDuel() override;
-	void InitMatchBo5();
-    void InitMatchBo7();
 	void Chat(DuelPlayer* dp, unsigned char* pdata, int len) override;
 	void JoinGame(DuelPlayer* dp, unsigned char* pdata, bool is_creater) override;
 	void LeaveGame(DuelPlayer* dp) override;
@@ -30,6 +28,8 @@ public:
 	int Analyze(unsigned char* msgbuffer, unsigned int len) override;
 	void GetResponse(DuelPlayer* dp, unsigned char* pdata, unsigned int len) override;
 	void TimeConfirm(DuelPlayer* dp) override;
+	void InitMatchBo5();
+    void InitMatchBo7();
 #ifdef YGOPRO_SERVER_MODE
 	void RequestField(DuelPlayer* dp) override;
 #endif
@@ -80,9 +80,7 @@ protected:
 	int match_kill{ 0 };
 	unsigned char duel_count{ 0 };
 	unsigned char tp_player{ 0 };
-    unsigned char match_max_duels{ 3 };
-    unsigned char match_wins_required{ 2 };
-    unsigned char match_result[99]{};
+	unsigned char match_result[3]{};
 	short time_limit[2]{};
 	short time_elapsed{ 0 };
 #ifdef YGOPRO_SERVER_MODE
