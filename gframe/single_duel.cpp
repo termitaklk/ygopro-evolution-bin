@@ -15,25 +15,6 @@ SingleDuel::SingleDuel(bool is_match) {
 }
 SingleDuel::~SingleDuel() {
 }
-
-void SingleDuel::InitMatchBo5() {
-    match_mode = true;
-    match_max_duels = 5;
-    match_wins_required = 3;
-
-    duel_count = 0;
-    std::memset(match_result, 2, sizeof(match_result)); // 2 = draw (neutral)
-}
-
-void SingleDuel::InitMatchBo7() {
-    match_mode = true;
-    match_max_duels = 7;
-    match_wins_required = 4;
-
-    duel_count = 0;
-    std::memset(match_result, 2, sizeof(match_result));
-}
-
 void SingleDuel::Chat(DuelPlayer* dp, unsigned char* pdata, int len) {
 	unsigned char scc[SIZE_STOC_CHAT];
 	const auto scc_size = NetServer::CreateChatPacket(pdata, len, scc, dp->type);
@@ -693,26 +674,17 @@ void SingleDuel::DuelEndProc() {
 		duel_stage = DUEL_STAGE_END;
 #endif
 	} else {
-		
-	int winc[3] = {0, 0, 0}; // 0=p0, 1=p1, 2=draw
-
-    const int limit = (duel_count < match_max_duels) ? duel_count : match_max_duels;
-    for(int i = 0; i < limit; ++i) {
-        const unsigned char r = match_result[i];
-        if(r <= 2) winc[r]++;
-    }
-
-    const bool match_finished =
-        match_kill
-        || (winc[0] >= match_wins_required)
-        || (winc[1] >= match_wins_required)
-        || (duel_count >= match_max_duels);
-
-    if(match_finished) {
-        NetServer::SendPacketToPlayer(players[0], STOC_DUEL_END);
-        NetServer::ReSendToPlayer(players[1]);
-        for(auto oit = observers.begin(); oit != observers.end(); ++oit)
-            NetServer::ReSendToPlayer(*oit);
+		int winc[3] = {0, 0, 0};
+		for(int i = 0; i < duel_count; ++i)
+			winc[match_result[i]]++;
+		if(match_kill
+		        || (winc[0] == 2 || (winc[0] == 1 && winc[2] == 2))
+		        || (winc[1] == 2 || (winc[1] == 1 && winc[2] == 2))
+		        || (winc[2] == 3 || (winc[0] == 1 && winc[1] == 1 && winc[2] == 1)) ) {
+			NetServer::SendPacketToPlayer(players[0], STOC_DUEL_END);
+			NetServer::ReSendToPlayer(players[1]);
+			for(auto oit = observers.begin(); oit != observers.end(); ++oit)
+				NetServer::ReSendToPlayer(*oit);
 #ifdef YGOPRO_SERVER_MODE
 			NetServer::ReSendToPlayers(cache_recorder, replay_recorder);
 			NetServer::StopServer();

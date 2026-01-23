@@ -22,21 +22,15 @@ extern HostInfo game_info;
 void NetServer::InitDuel()
 {
 	if(game_info.mode == MODE_SINGLE) {
-        duel_mode = new SingleDuel(false);
-        duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-    } else if(game_info.mode == MODE_MATCH || game_info.mode == MODE_MATCH_BO5 || game_info.mode == MODE_MATCH_BO7) {
-
-        auto* sd = new SingleDuel(true);
-        if(game_info.mode == MODE_MATCH_BO5) sd->InitMatchBo5();
-        else if(game_info.mode == MODE_MATCH_BO7) sd->InitMatchBo7();
-        duel_mode = sd;
-        duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-    } else if(game_info.mode == MODE_TAG) {
-        duel_mode = new TagDuel();
-        duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
-    }
+		duel_mode = new SingleDuel(false);
+		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
+	} else if(game_info.mode == MODE_MATCH) {
+		duel_mode = new SingleDuel(true);
+		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
+	} else if(game_info.mode == MODE_TAG) {
+		duel_mode = new TagDuel();
+		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
+	}
 
 	CTOS_CreateGame* pkt = new CTOS_CreateGame;
 	
@@ -384,35 +378,20 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 			else
 				pkt->info.lflist = 0;
 		}
-
-		if(pkt->info.mode == MODE_SINGLE) {
+		if (pkt->info.mode == MODE_SINGLE) {
 			duel_mode = new SingleDuel(false);
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-		} else if(pkt->info.mode == MODE_MATCH || pkt->info.mode == MODE_MATCH_BO5 || pkt->info.mode == MODE_MATCH_BO7) {
-
-			auto* sd = new SingleDuel(true);
-
-			if(pkt->info.mode == MODE_MATCH_BO5) {
-				sd->InitMatchBo5();
-			} else if(pkt->info.mode == MODE_MATCH_BO7) {
-				sd->InitMatchBo7();
-			} else {
-				// MODE_MATCH normal => BO3 default (no toques nada)
-				// sd ya tiene match_max_duels=3 y match_wins_required=2 por default en el header
-			}
-
-			duel_mode = sd;
+		}
+		else if (pkt->info.mode == MODE_MATCH) {
+			duel_mode = new SingleDuel(true);
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-
-		} else if(pkt->info.mode == MODE_TAG) {
+		}
+		else if (pkt->info.mode == MODE_TAG) {
 			duel_mode = new TagDuel();
 			duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
-
-		} else {
-			return;
 		}
-
+		else
+			return;
 		duel_mode->host_info = pkt->info;
 		BufferIO::NullTerminate(pkt->name);
 		BufferIO::NullTerminate(pkt->pass);
