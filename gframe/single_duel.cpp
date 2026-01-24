@@ -37,31 +37,35 @@ void SingleDuel::Chat(DuelPlayer* dp, unsigned char* pdata, int len) {
 #endif
 }
 
-void SingleDuel::InitMatchBo7() {
-    match_mode = true;
-    match_max_duels = 7;
-    match_wins_required = 4;
-
-    duel_count = 0;
-    std::memset(match_result, 2, sizeof(match_result));
-
-    std::fprintf(stderr, "[SingleDuel] InitMatchBo7 -> max_duels=%u wins_required=%u\n",
-                 (unsigned)match_max_duels, (unsigned)match_wins_required);
-    std::fflush(stderr);
-}
-
 void SingleDuel::InitMatchBo5() {
     match_mode = true;
     match_max_duels = 5;
     match_wins_required = 3;
 
-    duel_count = 0;
-    std::memset(match_result, 2, sizeof(match_result)); // 2 = draw neutral
+    // ⚠️ Solo resetear si el match no ha empezado aún
+    if(duel_count == 0) {
+        std::memset(match_result, 2, sizeof(match_result)); // 2=draw
+    }
 
-    std::fprintf(stderr, "[SingleDuel] InitMatchBo5 -> max_duels=%u wins_required=%u\n",
-                 (unsigned)match_max_duels, (unsigned)match_wins_required);
+    std::fprintf(stderr, "[SingleDuel] InitMatchBo5 -> duel_count=%u max=%u wins=%u\n",
+        (unsigned)duel_count, (unsigned)match_max_duels, (unsigned)match_wins_required);
     std::fflush(stderr);
 }
+
+void SingleDuel::InitMatchBo7() {
+    match_mode = true;
+    match_max_duels = 7;
+    match_wins_required = 4;
+
+    if(duel_count == 0) {
+        std::memset(match_result, 2, sizeof(match_result));
+    }
+
+    std::fprintf(stderr, "[SingleDuel] InitMatchBo7 -> duel_count=%u max=%u wins=%u\n",
+        (unsigned)duel_count, (unsigned)match_max_duels, (unsigned)match_wins_required);
+    std::fflush(stderr);
+}
+
 
 void SingleDuel::JoinGame(DuelPlayer* dp, unsigned char* pdata, bool is_creater) {
 #ifdef YGOPRO_SERVER_MODE
