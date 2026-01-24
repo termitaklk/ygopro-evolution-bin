@@ -5,6 +5,7 @@
 #include "data_manager.h"
 #include "../ocgcore/mtrandom.h"
 #include <cstdio>
+#include <cstring>
 
 namespace ygo {
 
@@ -35,6 +36,20 @@ void SingleDuel::Chat(DuelPlayer* dp, unsigned char* pdata, int len) {
 		NetServer::ReSendToPlayer(replay_recorder);
 #endif
 }
+
+void SingleDuel::InitMatchBo5() {
+    match_mode = true;
+    match_max_duels = 5;
+    match_wins_required = 3;
+
+    duel_count = 0;
+    std::memset(match_result, 2, sizeof(match_result)); // 2 = draw neutral
+
+    std::fprintf(stderr, "[SingleDuel] InitMatchBo5 -> max_duels=%u wins_required=%u\n",
+                 (unsigned)match_max_duels, (unsigned)match_wins_required);
+    std::fflush(stderr);
+}
+
 void SingleDuel::JoinGame(DuelPlayer* dp, unsigned char* pdata, bool is_creater) {
 #ifdef YGOPRO_SERVER_MODE
 	bool is_recorder = false;
@@ -678,13 +693,32 @@ void SingleDuel::DuelEndProc() {
 		duel_stage = DUEL_STAGE_END;
 #endif
 	} else {
-		int winc[3] = {0, 0, 0};
-		for(int i = 0; i < duel_count; ++i)
-			winc[match_result[i]]++;
-		if(match_kill
-		        || (winc[0] == 2 || (winc[0] == 1 && winc[2] == 2))
-		        || (winc[1] == 2 || (winc[1] == 1 && winc[2] == 2))
-		        || (winc[2] == 3 || (winc[0] == 1 && winc[1] == 1 && winc[2] == 1)) ) {
+		int winc[3] = {0, 0, 0}; // 0=p0, 1=p1, 2=draw
+
+		// cuenta solo lo jugado (sin pasarte del arreglo)
+		const int limit = (duel_count < match_max_duels) ? duel_count : match_max_duels;
+		for(int i = 0; i < limit; ++i) {
+			const unsigned char r = match_result[i];
+			if(r <= 2) winc[r]++;
+		}
+
+		std::fprintf(stderr,
+			"[SingleDuel] DuelEndProc(match) mode max=%u wins=%u duel_count=%u winc={%d,%d,%d}\n",
+			(unsigned)match_max_duels,
+			(unsigned)match_wins_required,
+			(unsigned)duel_count,
+			winc[0], winc[1], winc[2]
+		);
+		std::fflush(stderr);
+
+		const bool match_finished =
+			match_kill
+			|| (winc[0] >= match_wins_required)
+			|| (winc[1] >= match_wins_required)
+			|| (duel_count >= match_max_duels);
+
+		if(match_finished) {
+			// (dejas aquí tu lógica existente de DuelEndProc cuando finaliza el match)
 			NetServer::SendPacketToPlayer(players[0], STOC_DUEL_END);
 			NetServer::ReSendToPlayer(players[1]);
 			for(auto oit = observers.begin(); oit != observers.end(); ++oit)

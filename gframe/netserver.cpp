@@ -396,6 +396,8 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, unsigned char* data, int len) {
 		if(pkt->info.rule > CURRENT_RULE)
 			pkt->info.rule = CURRENT_RULE;
 		if(pkt->info.mode > MODE_TAG)
+			std::fprintf(stderr, "[Llego aqui] -> MODE_SINGLE\n");
+			std::fflush(stderr);
 			pkt->info.mode = MODE_SINGLE;
 		bool found = false;
 		for (const auto& lflist : deckManager._lfList) {
