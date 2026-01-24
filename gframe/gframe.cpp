@@ -100,11 +100,14 @@ int main(int argc, char* argv[]) {
 		ygo::game_info.rule = atoi(argv[3]);
 		int mode = atoi(argv[4]);
 
-		// Permitir: 0=single, 1=match, 2=tag, 3=bo5
-		if(mode < MODE_SINGLE || mode > MODE_MATCH_BO5)
+		std::fprintf(stderr, "[argv] mode(raw)=%d -> mode=%d\n", mode, mode);
+		std::fflush(stderr);
+
+		// ahora permitimos 0..4
+		if(mode > MODE_MATCH_BO7)
 			mode = MODE_SINGLE;
 
-		ygo::game_info.mode = static_cast<uint8_t>(mode);
+		ygo::game_info.mode = (uint8_t)mode;
 
 		std::fprintf(stderr, "[argv] mode(raw)=%s -> mode=%d\n", argv[4], mode);
 		std::fflush(stderr);

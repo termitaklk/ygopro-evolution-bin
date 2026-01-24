@@ -29,6 +29,7 @@ public:
 	void GetResponse(DuelPlayer* dp, unsigned char* pdata, unsigned int len) override;
 	void TimeConfirm(DuelPlayer* dp) override;
 	void InitMatchBo5();
+	void InitMatchBo7();
 #ifdef YGOPRO_SERVER_MODE
 	void RequestField(DuelPlayer* dp) override;
 #endif

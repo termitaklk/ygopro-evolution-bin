@@ -38,18 +38,39 @@ void NetServer::InitDuel()
 	if(game_info.mode == MODE_SINGLE) {
 		std::fprintf(stderr, "[InitDuel] -> MODE_SINGLE\n");
 		std::fflush(stderr);
+
 		duel_mode = new SingleDuel(false);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
-	} else if(game_info.mode == MODE_MATCH) {
-		std::fprintf(stderr, "[InitDuel] -> MATCH-like (%s)\n", ModeName((unsigned)game_info.mode));
+
+	} else if(game_info.mode == MODE_MATCH || game_info.mode == MODE_MATCH_BO5 || game_info.mode == MODE_MATCH_BO7) {
+		std::fprintf(stderr, "[InitDuel] -> MATCH-like mode=%u\n", (unsigned)game_info.mode);
 		std::fflush(stderr);
-		duel_mode = new SingleDuel(true);
+
+		auto* sd = new SingleDuel(true);
+
+		if(game_info.mode == MODE_MATCH_BO5) {
+			sd->InitMatchBo5();
+		} else if(game_info.mode == MODE_MATCH_BO7) {
+			sd->InitMatchBo7();
+		}
+		// MODE_MATCH normal queda como BO3 por defecto (sin tocar nada)
+
+		duel_mode = sd;
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
+
 	} else if(game_info.mode == MODE_TAG) {
 		std::fprintf(stderr, "[InitDuel] -> MODE_TAG\n");
 		std::fflush(stderr);
+
 		duel_mode = new TagDuel();
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, TagDuel::TagTimer, duel_mode);
+
+	} else {
+		std::fprintf(stderr, "[InitDuel] -> UNKNOWN mode=%u (fallback SINGLE)\n", (unsigned)game_info.mode);
+		std::fflush(stderr);
+
+		duel_mode = new SingleDuel(false);
+		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 	}
 
 	CTOS_CreateGame* pkt = new CTOS_CreateGame;
