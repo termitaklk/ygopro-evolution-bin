@@ -660,7 +660,7 @@ public:
 extern Game* mainGame;
 
 #ifdef YGOPRO_SERVER_MODE
-#define MAX_MATCH_COUNT 7
+#define MAX_MATCH_COUNT 3
 
 extern unsigned short server_port;
 extern unsigned short replay_mode;
