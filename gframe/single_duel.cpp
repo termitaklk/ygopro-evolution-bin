@@ -2311,10 +2311,10 @@ void SingleDuel::SingleTimer(evutil_socket_t fd, short events, void* arg) {
 		NetServer::ReSendToPlayers(sd->cache_recorder, sd->replay_recorder);
 #endif
 		if(sd->players[player] == sd->pplayer[player]) {
-			sd->match_result[sd->duel_count++] = player;     // <-- antes era 1 - player
+			sd->match_result[sd->duel_count++] = 1 - player;
 			sd->tp_player = player;
 		} else {
-			sd->match_result[sd->duel_count++] = 1 - player; // <-- antes era player
+			sd->match_result[sd->duel_count++] = player;
 			sd->tp_player = 1 - player;
 		}
 		sd->EndDuel();
