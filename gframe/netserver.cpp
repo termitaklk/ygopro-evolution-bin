@@ -11,6 +11,7 @@ static const char* ModeName(unsigned int m) {
 		case MODE_SINGLE: return "MODE_SINGLE";
 		case MODE_MATCH:  return "MODE_MATCH";
 		case MODE_TAG:    return "MODE_TAG";
+		case MODE_MATCH_BO5:    return "MODE_MATCH_BO5";
 		default: return "MODE_UNKNOWN";
 	}
 }

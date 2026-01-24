@@ -99,9 +99,16 @@ int main(int argc, char* argv[]) {
 		ygo::game_info.lflist = lflist;
 		ygo::game_info.rule = atoi(argv[3]);
 		int mode = atoi(argv[4]);
-		if(mode > 2)
-			mode = 0;
-		ygo::game_info.mode = mode;
+
+		// Permitir: 0=single, 1=match, 2=tag, 3=bo5
+		if(mode < MODE_SINGLE || mode > MODE_MATCH_BO5)
+			mode = MODE_SINGLE;
+
+		ygo::game_info.mode = static_cast<uint8_t>(mode);
+
+		std::fprintf(stderr, "[argv] mode(raw)=%s -> mode=%d\n", argv[4], mode);
+		std::fflush(stderr);
+
 		if(argv[5][0] == 'T')
 			ygo::game_info.duel_rule = ygo::DEFAULT_DUEL_RULE - 1;
 		else if(argv[5][0] == 'F')
