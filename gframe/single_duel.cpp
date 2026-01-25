@@ -39,8 +39,6 @@ void SingleDuel::Chat(DuelPlayer* dp, unsigned char* pdata, int len) {
 }
 
 void SingleDuel::InitMatch(int best_of) {
-  best_of = std::max(1, std::min(best_of, (int)MAX_MATCH_COUNT));
-
   if(best_of > 1 && (best_of % 2) == 0)
     best_of += 1;
 
