@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
 	enable_log = 1;
 	ygo::server_port = 7911;
 	ygo::replay_mode = 0;
+	ygo::best_of = 1;
 	ygo::game_info.lflist = 0;
 	ygo::game_info.rule = 0;
 	ygo::game_info.mode = 0;

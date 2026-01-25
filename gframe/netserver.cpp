@@ -43,7 +43,7 @@ void NetServer::InitDuel()
 		duel_mode = new SingleDuel(false);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 
-	} else if(game_info.mode == MODE_MATCH) {
+	} else if(game_info.mode == MODE_MATCH || best_of > 1) {
 		std::fprintf(stderr, "[InitDuel] -> MATCH-like best_of=%u\n", (unsigned)best_of);
 		std::fflush(stderr);
 
