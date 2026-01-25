@@ -6,6 +6,7 @@
 #include "../ocgcore/mtrandom.h"
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
 
 namespace ygo {
 
@@ -38,21 +39,21 @@ void SingleDuel::Chat(DuelPlayer* dp, unsigned char* pdata, int len) {
 }
 
 void SingleDuel::InitMatch(int best_of) {
-	best_of = std::clamp(best_of, 1, MAX_MATCH_COUNT);
-  
-	if(best_of > 1 && (best_of % 2) == 0)
-	best_of += 1;
+  best_of = std::max(1, std::min(best_of, (int)MAX_MATCH_COUNT));
 
-	match_mode = true;
-	match_max_duels = static_cast<unsigned char>(best_of);
-	match_wins_required = static_cast<unsigned char>((best_of / 2) + 1);
+  if(best_of > 1 && (best_of % 2) == 0)
+    best_of += 1;
 
-	duel_count = 0;
-	std::memset(match_result, 2, sizeof(match_result));
+  match_mode = true;
+  match_max_duels = static_cast<unsigned char>(best_of);
+  match_wins_required = static_cast<unsigned char>((best_of / 2) + 1);
 
-	std::fprintf(stderr, "[SingleDuel] InitMatch -> max_duels=%u wins_required=%u\n",
-								 (unsigned)match_max_duels, (unsigned)match_wins_required);
-	std::fflush(stderr);
+  duel_count = 0;
+  std::memset(match_result, 2, sizeof(match_result));
+
+  std::fprintf(stderr, "[SingleDuel] InitMatch -> max_duels=%u wins_required=%u\n",
+                 (unsigned)match_max_duels, (unsigned)match_wins_required);
+  std::fflush(stderr);
 }
 
 void SingleDuel::InitMatchBo7() {
