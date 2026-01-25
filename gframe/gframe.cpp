@@ -136,6 +136,8 @@ int main(int argc, char* argv[]) {
 		ygo::game_info.draw_count = atoi(argv[10]);
 		ygo::game_info.time_limit = atoi(argv[11]);
 		ygo::replay_mode = atoi(argv[12]);
+		ygo::best_of = atoi(argv[13]);
+		
 		for (int i = 13; (i < argc && i < (13 + MAX_MATCH_COUNT)) ; ++i)
 		{
 			auto ok = Base64::Decode(

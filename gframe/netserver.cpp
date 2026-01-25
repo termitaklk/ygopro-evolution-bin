@@ -28,11 +28,12 @@ size_t NetServer::last_sent = 0;
 
 #ifdef YGOPRO_SERVER_MODE
 extern unsigned short replay_mode;
+extern unsigned short best_of;
 extern HostInfo game_info;
 
 void NetServer::InitDuel()
 {
-    std::fprintf(stderr, "[NetServer::InitDuel] game_info.mode=%u\n", (unsigned)game_info.mode);
+    std::fprintf(stderr, "[NetServer::InitDuel] best_of=%u\n", (unsigned)best_of);
     std::fflush(stderr);
 
 	if(game_info.mode == MODE_SINGLE) {
@@ -42,18 +43,13 @@ void NetServer::InitDuel()
 		duel_mode = new SingleDuel(false);
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);
 
-	} else if(game_info.mode == MODE_MATCH || game_info.mode == MODE_MATCH_BO5 || game_info.mode == MODE_MATCH_BO7) {
-		std::fprintf(stderr, "[InitDuel] -> MATCH-like mode=%u\n", (unsigned)game_info.mode);
+	} else if(game_info.mode == MODE_MATCH) {
+		std::fprintf(stderr, "[InitDuel] -> MATCH-like best_of=%u\n", (unsigned)best_of);
 		std::fflush(stderr);
 
 		auto* sd = new SingleDuel(true);
 
-		if(game_info.mode == MODE_MATCH_BO5) {
-			sd->InitMatchBo5();
-		} else if(game_info.mode == MODE_MATCH_BO7) {
-			sd->InitMatchBo7();
-		}
-		// MODE_MATCH normal queda como BO3 por defecto (sin tocar nada)
+		sd->InitMatch(best_of);
 
 		duel_mode = sd;
 		duel_mode->etimer = event_new(net_evbase, 0, EV_TIMEOUT | EV_PERSIST, SingleDuel::SingleTimer, duel_mode);

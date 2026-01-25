@@ -31,6 +31,7 @@ struct HostInfo {
 	uint8_t start_hand{};
 	uint8_t draw_count{};
 	uint16_t time_limit{};
+	uint8_t best_of{};
 };
 check_trivially_copyable(HostInfo);
 static_assert(sizeof(HostInfo) == 20, "size mismatch: HostInfo");

@@ -30,6 +30,7 @@ public:
 	void TimeConfirm(DuelPlayer* dp) override;
 	void InitMatchBo5();
 	void InitMatchBo7();
+	void InitMatch(int best_of);
 #ifdef YGOPRO_SERVER_MODE
 	void RequestField(DuelPlayer* dp) override;
 #endif

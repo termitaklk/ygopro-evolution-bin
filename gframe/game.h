@@ -664,6 +664,7 @@ extern Game* mainGame;
 
 extern unsigned short server_port;
 extern unsigned short replay_mode;
+extern unsigned short best_of;
 extern HostInfo game_info;
 extern uint32_t pre_seed[MAX_MATCH_COUNT][SEED_COUNT];
 extern uint8_t pre_seed_specified[MAX_MATCH_COUNT];
